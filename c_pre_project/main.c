@@ -7,41 +7,56 @@
 
 int main(int argc, char *argv[])
 {
+    char *input;
+    char output[256];
+    char *dot;
+    FILE *in;
+    FILE *out;
+    char line[1024];
+
     if (argc != 2)
     {
         printf("Usage: %s inputfile.c\n", argv[0]);
         return 1;
     }
 
-    char *input = argv[1];
-    char output[256];
+    input = argv[1];
+
+    /* Build the output filename: replace the extension with .i */
     strcpy(output, input);
-    char *dot = strrchr(output, '.');
-    if (dot)
+    dot = strrchr(output, '.');
+    if (dot != NULL)
         strcpy(dot, ".i");
     else
         strcat(output, ".i");
 
-    FILE *in = fopen(input, "r");
-    FILE *out = fopen(output, "w");
-    if (!in || !out)
+    in = fopen(input, "r");
+    if (in == NULL)
     {
-        printf("Error opening files.\n");
+        printf("Error: could not open input file %s\n", input);
         return 1;
     }
 
-    char line[1024];
-    while (fgets(line, sizeof(line), in))
+    out = fopen(output, "w");
+    if (out == NULL)
+    {
+        printf("Error: could not create output file %s\n", output);
+        fclose(in);
+        return 1;
+    }
+
+    while (fgets(line, sizeof(line), in) != NULL)
     {
         remove_comments(line);
+
         if (strlen(line) == 0)
             continue;
 
-        if (strstr(line, "#include"))
+        if (strstr(line, "#include") != NULL)
         {
             handle_include(line, out);
         }
-        else if (strstr(line, "#define"))
+        else if (strstr(line, "#define") != NULL)
         {
             handle_define(line);
         }
@@ -54,6 +69,7 @@ int main(int argc, char *argv[])
 
     fclose(in);
     fclose(out);
+
     printf("Preprocessing complete: %s\n", output);
     return 0;
 }
