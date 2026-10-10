@@ -11,28 +11,74 @@ int macro_count = 0;
 
 void handle_define(char *line)
 {
-    char name[50], rest[100];
-    if (sscanf(line, "#define %s %[^\n]", name, rest) != 2)
+    char name[50];
+    char rest[100];
+    int i = 0;
+    int j = 0;
+    int k = 0;
+
+    /* Step 1: skip the word "#define" and any spaces after it */
+    while (line[i] != '\0' && line[i] != ' ')
+        i = i + 1;
+    while (line[i] == ' ')
+        i = i + 1;
+
+    /* Step 2: read the macro name.
+       A name ends at a space or at an opening parenthesis '(' */
+    j = 0;
+    while (line[i] != '\0' && line[i] != ' ' && line[i] != '(' && j < 49)
+    {
+        name[j] = line[i];
+        j = j + 1;
+        i = i + 1;
+    }
+    name[j] = '\0';
+
+    /* If nothing was read, the line is not a valid #define */
+    if (j == 0)
         return;
 
-    char *paren = strchr(name, '(');
-    if (paren)
+    /* Step 3: decide simple vs function-like macro */
+    if (line[i] == '(')
     {
-        *paren = '\0';
-        strcpy(macro_names[macro_count], name);
-        strcpy(macro_params[macro_count], paren + 1);
-        char *close = strchr(macro_params[macro_count], ')');
-        if (close)
-            *close = '\0';
-        strcpy(macro_values[macro_count], rest);
+        /* Function-like macro: read parameters until ')' */
+        i = i + 1;
+        k = 0;
+        while (line[i] != '\0' && line[i] != ')' && k < 19)
+        {
+            macro_params[macro_count][k] = line[i];
+            k = k + 1;
+            i = i + 1;
+        }
+        macro_params[macro_count][k] = '\0';
+        if (line[i] == ')')
+            i = i + 1;
         macro_is_func[macro_count] = 1;
     }
     else
     {
-        strcpy(macro_names[macro_count], name);
+        /* Simple macro: no parameters */
         macro_params[macro_count][0] = '\0';
-        strcpy(macro_values[macro_count], rest);
         macro_is_func[macro_count] = 0;
     }
-    macro_count++;
+
+    /* Step 4: skip spaces before the value */
+    while (line[i] == ' ')
+        i = i + 1;
+
+    /* Step 5: read the replacement value (up to end of line) */
+    k = 0;
+    while (line[i] != '\0' && line[i] != '\n' && k < 99)
+    {
+        rest[k] = line[i];
+        k = k + 1;
+        i = i + 1;
+    }
+    rest[k] = '\0';
+
+    /* Step 6: save everything into the global macro arrays */
+    strcpy(macro_names[macro_count], name);
+    strcpy(macro_values[macro_count], rest);
+
+    macro_count = macro_count + 1;
 }
