@@ -31,10 +31,9 @@ int main(int argc, char *argv[])
     }
 
     char line[1024];
-    int in_comment = 0;
     while (fgets(line, sizeof(line), in))
     {
-        remove_comments(line, &in_comment);
+        remove_comments(line);
         if (strlen(line) == 0)
             continue;
 
